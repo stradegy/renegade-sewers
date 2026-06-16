@@ -83,6 +83,28 @@ def fmt_int(x):
     except Exception:
         return str(x)
 
+def compute_gini(values):
+    """
+    Compute Gini coefficient for non-negative values.
+    Returns float between 0 and 1.
+    """
+    s = pd.Series(values).dropna().astype(float)
+
+    if s.empty:
+        return 0.0
+
+    s = s[s >= 0]
+
+    if s.empty or s.sum() == 0:
+        return 0.0
+
+    s = s.sort_values().reset_index(drop=True)
+    n = len(s)
+    index = pd.Series(range(1, n + 1), dtype=float)
+
+    gini = (2 * (index * s).sum()) / (n * s.sum()) - (n + 1) / n
+    return float(gini)
+
 def prepare_cumulative_for_date(df: pd.DataFrame, date_col: str, exclude_zero: bool = True) -> pd.DataFrame:
     temp = df[["IGN", date_col]].copy()
     temp = temp.rename(columns={date_col: "Score"})
@@ -97,6 +119,8 @@ def prepare_cumulative_for_date(df: pd.DataFrame, date_col: str, exclude_zero: b
         temp["Rank"] = []
         temp["Cumulative Score"] = []
         temp["Cumulative % of Total"] = []
+        temp["Date"] = []
+        temp["Total Score"] = []
         return temp
 
     temp["Rank"] = range(1, len(temp) + 1)
@@ -207,7 +231,7 @@ if not cumulative_frames:
 
 combined_cum_df = pd.concat(cumulative_frames, ignore_index=True)
 
-# Default/focus date for metrics/detail = latest selected date
+# Focus date = latest selected date
 focus_date = sorted(selected_dates, key=lambda x: pd.to_datetime(x, errors="coerce"))[-1]
 focus_df = combined_cum_df[combined_cum_df["Date"] == focus_date].copy()
 
@@ -218,13 +242,16 @@ if focus_df.empty:
 focus_total_score = int(focus_df["Total Score"].iloc[0])
 focus_player_count = int(len(focus_df))
 focus_top_score = int(focus_df["Score"].max())
+focus_gini = compute_gini(focus_df["Score"])
+top_player_name = str(focus_df.iloc[0]["IGN"]) if not focus_df.empty else "-"
 
 # =========================================================
 # HEADER METRICS
 # =========================================================
 st.subheader(f"Focus date: {focus_date}")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
+
 with col1:
     st.metric("Total Score", fmt_int(focus_total_score))
 
@@ -232,9 +259,12 @@ with col2:
     st.metric("Players Counted", fmt_int(focus_player_count))
 
 with col3:
-    top_player_name = str(focus_df.iloc[0]["IGN"]) if not focus_df.empty else "-"
     st.metric("Top Player Score", fmt_int(focus_top_score))
     st.caption(f"Top player: {top_player_name}")
+
+with col4:
+    st.metric("Gini Coefficient", f"{focus_gini:.3f}")
+    st.caption("0 = even, 1 = concentrated")
 
 # =========================================================
 # QUERY RESULTS AS TABLE
