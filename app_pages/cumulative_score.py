@@ -227,10 +227,14 @@ st.subheader(f"Focus date: {focus_date}")
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total Score", fmt_int(focus_total_score))
+
 with col2:
     st.metric("Players Counted", fmt_int(focus_player_count))
+
 with col3:
+    top_player_name = str(focus_df.iloc[0]["IGN"]) if not focus_df.empty else "-"
     st.metric("Top Player Score", fmt_int(focus_top_score))
+    st.caption(f"Top player: {top_player_name}")
 
 # =========================================================
 # QUERY RESULTS AS TABLE
