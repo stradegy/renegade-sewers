@@ -4,14 +4,16 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter
 
-# Set the title and favicon that appear in the Browser's tab bar.
+# Set the title and favicon that appear in the browser tab
 st.set_page_config(
-    page_title='Insurgence',
-    page_icon=':skull_and_crossbones:', # This is an emoji shortcode. Could be a URL too.
-    layout='wide',
+    page_title="Insurgence",
+    page_icon=":skull_and_crossbones:",
+    layout="wide",
 )
 
-
+# =========================================================
+# LOADERS
+# =========================================================
 @st.cache_data
 def load_guild_ranks():
     rows = st.secrets["tables"]["guild_ranks"]["rows"]
@@ -31,7 +33,7 @@ def load_guild_ranks():
     guilds_df["date"] = pd.to_datetime(guilds_df["date"], errors="coerce")
     guilds_df["guild"] = guilds_df["guild"].astype("string")
 
-    # Optional sort
+    # Sort
     guilds_df = guilds_df.sort_values(
         by=["date", "rank"],
         ascending=[True, True],
@@ -44,12 +46,6 @@ def load_guild_ranks():
 @st.cache_data
 def load_sewers_score():
     raw = st.secrets["tables"]["sewers_score"]
-
-    # raw is like:
-    # {
-    #   "0nLemon": {"2026-06-03": 408, "2026-06-10": 675},
-    #   "60FD": {"2026-06-03": 0, "2026-06-10": 1677},
-    # }
 
     df = pd.DataFrame.from_dict(raw, orient="index")
     df.index.name = "IGN"
@@ -70,6 +66,9 @@ def load_sewers_score():
     return df
 
 
+# =========================================================
+# LOAD DATA
+# =========================================================
 guilds_df = load_guild_ranks()
 df = load_sewers_score()
 
@@ -77,7 +76,9 @@ st.session_state.guilds_df = guilds_df
 st.session_state.df = df
 st.session_state.names = sorted(df["IGN"].dropna().unique().tolist())
 
-
+# =========================================================
+# PAGE TITLE
+# =========================================================
 st.title("Guild Ranks")
 
 if guilds_df is None or guilds_df.empty:
@@ -128,8 +129,6 @@ selected_dates = st.multiselect(
     default=default_dates
 )
 
-top_n = st.slider("Top N ranks", min_value=3, max_value=20, value=10, step=1)
-
 if not selected_dates:
     st.warning("Please select at least one date.")
     st.stop()
@@ -142,15 +141,11 @@ if filtered.empty:
     st.warning("No data available for the selected dates.")
     st.stop()
 
-# Keep only top N
-filtered_top = filtered[filtered["rank"] <= top_n].copy()
-
-# Guild universe for plotting:
-# union of guilds that appear in top N across selected dates
-selected_guilds = filtered_top["guild"].dropna().unique().tolist()
+# Use all guilds within selected dates
+selected_guilds = filtered["guild"].dropna().unique().tolist()
 
 if not selected_guilds:
-    st.warning("No guilds found in the selected rank range.")
+    st.warning("No guilds found for the selected dates.")
     st.stop()
 
 plot_df = filtered[filtered["guild"].isin(selected_guilds)].copy()
@@ -224,7 +219,7 @@ ax1.set_xlabel("Date")
 ax1.set_ylabel("Rank")
 
 # Invert rank axis so 1 is at the top
-max_rank = int(max(top_n, plot_df["rank"].max()))
+max_rank = int(plot_df["rank"].max())
 ax1.set_ylim(max_rank + 0.5, 0.5)
 
 ax1.set_yticks(range(1, max_rank + 1))
@@ -297,10 +292,10 @@ plt.tight_layout()
 st.pyplot(fig2, use_container_width=True)
 
 # =========================================================
-# OPTIONAL: SHOW UNDERLYING FILTERED TABLE
+# RAW DATAFRAME
 # =========================================================
-with st.expander("Show filtered guild rank data"):
-    st.dataframe(
-        filtered_top.sort_values(["date", "rank"]),
-        use_container_width=True
-    )
+st.subheader("Guild Rank Data")
+st.dataframe(
+    guilds_df.sort_values(["date", "rank"]),
+    use_container_width=True
+)
