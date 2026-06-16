@@ -85,7 +85,8 @@ st.session_state.dates = [c for c in df.columns if c != "IGN"]
 pg = st.navigation(
     [
         st.Page("app_pages/guild_ranks.py", title="Guild Ranks", icon=":material/groups:"),
-        st.Page("app_pages/sewers_score.py", title="Sewers Score", icon=":material/insights:")
+        st.Page("app_pages/sewers_score.py", title="Sewers Score", icon=":material/insights:"),
+        st.Page("app_pages/cumulative_score.py", title="Cumulative Score", icon=":material/stacked_line_chart:")
     ],
     position="top",
     expanded=True,
