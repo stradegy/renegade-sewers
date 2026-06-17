@@ -245,6 +245,12 @@ focus_top_score = int(focus_df["Score"].max())
 focus_gini = compute_gini(focus_df["Score"])
 top_player_name = str(focus_df.iloc[0]["IGN"]) if not focus_df.empty else "-"
 
+focus_mean = focus_df["Score"].mean()
+focus_median = focus_df["Score"].median()
+focus_q1 = focus_df["Score"].quantile(0.25)
+focus_q3 = focus_df["Score"].quantile(0.75)
+focus_iqr = focus_q3 - focus_q1
+
 # =========================================================
 # HEADER METRICS
 # =========================================================
@@ -265,6 +271,22 @@ with col3:
 with col4:
     st.metric("Gini Coefficient", f"{focus_gini:.3f}")
     st.caption("0 = even, 1 = concentrated")
+    
+# Second row of summary statistics
+col5, col6, col7, col8 = st.columns(4)
+
+with col5:
+    st.metric("Mean", f"{focus_mean:,.0f}")
+
+with col6:
+    st.metric("Median", f"{focus_median:,.0f}")
+
+with col7:
+    st.metric("Q1 / Q3", f"{focus_q1:,.0f} / {focus_q3:,.0f}")
+    st.caption(f"Q1: {focus_q1:,.0f}  •  Q3: {focus_q3:,.0f}")
+
+with col8:
+    st.metric("IQR", f"{focus_iqr:,.0f}")
 
 # =========================================================
 # QUERY RESULTS AS TABLE
